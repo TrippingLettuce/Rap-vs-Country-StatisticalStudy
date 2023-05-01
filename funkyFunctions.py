@@ -4,18 +4,20 @@ import numpy as np
 from lyricsgenius import Genius
 from dotenv import load_dotenv
 import re
+import requests
 
 
 load_dotenv()  # Load environment variables from the .env file
 
 genius_key = os.getenv('GENUIS_KEY')
-genius = Genius(genius_key,timeout=15)
+genius = Genius(genius_key,timeout=30)
 genius.verbose = False
 genius.remove_section_headers = True
 genius.excluded_terms = ["(Remix)", "(Live)"]
 
 def getData(rap_df):
 
+    song_number = 5
     #Fill Songs and Lyrics Column with Nan
     rap_df['Songs'] = np.nan
     rap_df['Lyrics'] = np.nan
@@ -24,22 +26,35 @@ def getData(rap_df):
 
     #Loop through rows
     #for x in range(loc(rap_df)):
-    for x in range(12):
+    for x in range(4):
         #Get artist name
         artist_name = rap_df.loc[x][0]
         print(f"Getting Data for {artist_name}")
         #Pull song data from genuis
-        artist = genius.search_artist(artist_name, max_songs=3, sort="popularity")
-        
+        # Retry mechanism
+        retries = 3
+        while retries > 0:
+            try:
+                # Pull song data from genius
+                artist = genius.search_artist(artist_name, max_songs=song_number, sort="popularity")
+                break
+            except requests.exceptions.Timeout:
+                retries -= 1
+                print(f"Request timed out. Retrying... {retries} attempts remaining.")
+                if retries == 0:
+                    print(f"Failed to get data for {artist_name}. Skipping...")
+                    continue
         #Temp song and lyric list
         song_list = []
         song_lyrics_list = []
 
-        # Iterate over the songs and add them to the list
+        #iiterate through songs and year 
         for song in artist.songs:
             print(song.title)
-            song_list.append(song.title) 
-        #Add to row
+            song_list.append(song.title)
+
+
+        # Add to row
         rap_df['Songs'][x] = song_list
 
         # Iterate over the lyrics and add them to the list
@@ -52,26 +67,31 @@ def getData(rap_df):
     print("Data Has Been Recived")
     #Show head
     print(rap_df.head())
+    
+    rap_df.to_csv("/home/lettuce/MyCode/pandasproject/rap_mid1.csv",index=False)
 
-
-    return rap_df
 
 
 def cleanData(rap_df):
-
     print("Cleaning Data...")
-    #Go through and remove format 
-    for x in range(11):
+
+    for x in range(4):
         name = rap_df["Rap Name"][x]
-        print(f"Cleaning {name}")
-        input_string = rap_df["Lyrics"][x]
-        lyrics_string = " ".join(input_string)
-        process_string(input_string)      
-        output_string = process_string(input_string)
-        rap_df["Lyrics"][x] = output_string
+        print(f"Cleaning data for {name}")
+
+        lyrics_list = rap_df["Lyrics"][x]
+        cleaned_lyrics_list = []
+
+        #Maybe not go trhough loop
+        cleaned_lyric = process_string(lyrics_list)
+        cleaned_lyrics_list.append(cleaned_lyric)
+
+        rap_df["Lyrics"][x] = cleaned_lyrics_list
 
     print("Cleaned Data")
-    return rap_df
+    print(rap_df.head())
+    rap_df.to_csv("/home/lettuce/MyCode/pandasproject/rap_mid2.csv",index=False)
+
 
 def process_string(input_string):
     # Remove all occurrences of a standalone backslash
@@ -93,17 +113,21 @@ def organizeDataTotal(rap_df):
     #Overall for all rappers
     lyric_dict_all_rap = {}
 
+    print("")
+    print("Organizing TotalData...")
+    print("")
+
     #Itterate through each row 
-    for x in range(11):
+    for x in range(4):
     #Take lyric column
         lyrics = rap_df['Lyrics'][x]
-
         words = lyrics.lower().split()
         for word in words: 
             if word in lyric_dict_all_rap:
                 lyric_dict_all_rap[word] += 1
             else:
                 lyric_dict_all_rap[word] = 1
+
 
     # Append the key-value pair to the dictionary
     #my_dict[key] = value
@@ -143,7 +167,7 @@ def organizeDataTotal(rap_df):
     rap_final = pd.concat([artist_name_df, rap_final], axis=1)
 
     #Index needs to be True
-    rap_final.to_csv("/home/lettuce/MyCode/pandasproject/Rap-vs-Country-StatisticalStudy/final_rap.csv",index=False)
+    rap_final.to_csv("/home/lettuce/MyCode/pandasproject/rap_end.csv",index=False)
 
 
 #Had to use ChatGpt for some of this as Idk 
@@ -156,8 +180,8 @@ def organizeDataArtist(rap_df, rap_final):
     #Get index list
     index_list = rap_final.columns.tolist()
 
-    for x in range(1, 11):
-        artist_name = rap_df["Rap Name"][x-1]  # Update the index to start from 0
+    for x in range(4):
+        artist_name = rap_df["Rap Name"][x]  # Update the index to start from 0
         print(f"Organizing Lyrics for {artist_name}")
 
         # Temp dictionary reset (Uses most common [] words)
@@ -167,7 +191,7 @@ def organizeDataArtist(rap_df, rap_final):
         dick["Artist Name"] = artist_name
 
         # Take lyric column
-        lyrics = rap_df['Lyrics'][x-1]  # Update the index to start from 0
+        lyrics = rap_df['Lyrics'][x]  # Update the index to start from 0
         words = lyrics.lower().split()
         for word in words:
             if word in index_list:
@@ -175,7 +199,7 @@ def organizeDataArtist(rap_df, rap_final):
                 dick[word] += 1
 
         # Update the row in rap_final DataFrame
-        rap_final.loc[x-1] = dick
+        rap_final.loc[x] = dick
 
     #So bassically I have to create a new empty row and save the total to top cuz I am a dumb ass somehow
     nan_row = pd.DataFrame(columns=rap_final.columns, index=[0])
@@ -184,8 +208,14 @@ def organizeDataArtist(rap_df, rap_final):
     
     rap_final.loc[0] = total
 
+    #Gonna also change nword to nword 
+    #Want to talk or not to talk about the use of the nword in rap 
+    #N-word N-words HardR
+    
+    #Add like column to front
+    
 
-    rap_final.to_csv("/home/lettuce/MyCode/pandasproject/Rap-vs-Country-StatisticalStudy/final_rap.csv",index=False)
+    rap_final.to_csv("/home/lettuce/MyCode/pandasproject/rap_end.csv",index=False)
     print("Organized Data")
 
 

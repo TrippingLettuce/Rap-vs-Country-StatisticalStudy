@@ -13,22 +13,27 @@ genius.verbose = False
 genius.remove_section_headers = True
 genius.excluded_terms = ["(Remix)", "(Live)"]
 
+#Define Dataframes
+csv_start = pd.read_csv('/home/lettuce/MyCode/pandasproject/rap_start.csv')
 
-csv = pd.read_csv('/home/lettuce/MyCode/pandasproject/Rap-vs-Country-StatisticalStudy/raper_name copy 2.csv')
-#csv = pd.read_csv('/home/lettuce/MyCode/pandasproject/Rap-vs-Country-StatisticalStudy/raper_name copy.csv')
-#csv = pd.read_csv('/home/lettuce/MyCode/pandasproject/testmaybe.csv')
-csv_rap_final = pd.read_csv('/home/lettuce/MyCode/pandasproject/Rap-vs-Country-StatisticalStudy/final_rap.csv')
+
+
 #Get data 
-csv = funkyFunctions.getData(csv)
+funkyFunctions.getData(csv_start)
 #Clean Data 
-csv = funkyFunctions.cleanData(csv)
+csv_mid = pd.read_csv('/home/lettuce/MyCode/pandasproject/rap_mid1.csv')
+funkyFunctions.cleanData(csv_mid)
 #Organize Data
-funkyFunctions.organizeDataTotal(csv)
+csv_mid = pd.read_csv('/home/lettuce/MyCode/pandasproject/rap_mid2.csv')
+funkyFunctions.organizeDataTotal(csv_mid)
 #Orgaize Data Artist
-funkyFunctions.organizeDataArtist(csv, csv_rap_final)
+csv_final = pd.read_csv('/home/lettuce/MyCode/pandasproject/rap_end.csv')
+funkyFunctions.organizeDataArtist(csv_mid, csv_final)
+
 #Anaylize Data
 
 
+#Eras of rap
 
 
 # Take 50 top hip hop and 50 top rap combo

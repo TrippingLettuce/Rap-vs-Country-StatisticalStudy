@@ -14,3 +14,6 @@ index_list = rap_df.columns.tolist()
 my_dict = {key: 0 for key in index_list}
 
 print(my_dict)
+
+
+
