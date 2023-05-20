@@ -207,8 +207,8 @@ def organizeDataArtist(rap_df, rap_final):
     rap_final = pd.concat([nan_row, rap_final], ignore_index=True)
     
     rap_final.loc[0] = total
-
-    #Gonna also change nword to nword 
+  
+    #Gonna also change nword to nword  ok
     #Want to talk or not to talk about the use of the nword in rap 
     #N-word N-words HardR
     
